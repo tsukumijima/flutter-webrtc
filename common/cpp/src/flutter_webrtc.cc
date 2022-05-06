@@ -329,6 +329,32 @@ void FlutterWebRTC::HandleMethodCall(
       return;
     }
     DataChannelSend(data_channel, type, data, std::move(result));
+  } else if (method_call.method_name().compare("dataChannelBufferedAmount") == 0) {
+    if (!method_call.arguments()) {
+      result->Error("Bad Arguments", "Null constraints arguments received");
+      return;
+    }
+    const EncodableMap params =
+        GetValue<EncodableMap>(*method_call.arguments());
+    const std::string peerConnectionId = findString(params, "peerConnectionId");
+    RTCPeerConnection* pc = PeerConnectionForId(peerConnectionId);
+    if (pc == nullptr) {
+      result->Error("dataChannelSendFailed",
+                    "dataChannelSend() peerConnection is null");
+      return;
+    }
+
+    int dataChannelId = findInt(params, "dataChannelId");
+    const std::string type = findString(params, "type");
+    const EncodableValue data = findEncodableValue(params, "data");
+    RTCDataChannel* data_channel = DataChannelFromId(dataChannelId);
+    if (data_channel == nullptr) {
+      result->Error("dataChannelSendFailed",
+                    "dataChannelSend() data_channel is null");
+      return;
+    }
+    
+    result->Success(static_cast<int32_t>(data_channel->buffered_amount()));
   } else if (method_call.method_name().compare("dataChannelClose") == 0) {
     if (!method_call.arguments()) {
       result->Error("Bad Arguments", "Null constraints arguments received");

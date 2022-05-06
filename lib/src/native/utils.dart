@@ -27,5 +27,5 @@ class WebRTC {
       _channel.invokeMethod<T>(
         methodName,
         param,
-      );
+      );      
 }
