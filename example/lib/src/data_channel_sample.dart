@@ -12,7 +12,9 @@ class DataChannelSample extends StatefulWidget {
 }
 
 class _DataChannelSampleState extends State<DataChannelSample> {
-  RTCPeerConnection? _peerConnection;
+  RTCPeerConnection? _localPeerConnection;
+  RTCPeerConnection? _remotePeerConnection;
+
   bool _inCalling = false;
 
   RTCDataChannelInit? _dataChannelDict;
@@ -37,9 +39,18 @@ class _DataChannelSampleState extends State<DataChannelSample> {
     print(state);
   }
 
-  void _onCandidate(RTCIceCandidate candidate) {
+  void _onLocalCandidate(RTCIceCandidate candidate) {
     print('onCandidate: ${candidate.candidate}');
-    _peerConnection?.addCandidate(candidate);
+    _remotePeerConnection?.addCandidate(candidate);
+    setState(() {
+      _sdp += '\n';
+      _sdp += candidate.candidate ?? '';
+    });
+  }
+
+  void _onRemoteCandidate(RTCIceCandidate candidate) {
+    print('onCandidate: ${candidate.candidate}');
+    _localPeerConnection?.addCandidate(candidate);
     setState(() {
       _sdp += '\n';
       _sdp += candidate.candidate ?? '';
@@ -51,7 +62,7 @@ class _DataChannelSampleState extends State<DataChannelSample> {
   }
 
   /// Send some sample messages and handle incoming messages.
-  void _onDataChannel(RTCDataChannel dataChannel) {
+  void _onDataChannel(RTCDataChannel dataChannel) async {
     dataChannel.onMessage = (message) {
       if (message.type == MessageType.text) {
         print(message.text);
@@ -68,12 +79,22 @@ class _DataChannelSampleState extends State<DataChannelSample> {
       }
     });
 
-    dataChannel.send(RTCDataChannelMessage('Hello!'));
-    dataChannel.send(RTCDataChannelMessage.fromBinary(Uint8List(5)));
+    dataChannel.bufferedAmountStream.listen((event) {
+      _sdp += '\n BufferedAmountChanged called!';
+    });
+
+    await dataChannel.send(RTCDataChannelMessage('Hello!'));
+
+    await dataChannel
+        .send(RTCDataChannelMessage.fromBinary(Uint8List.fromList([5, 0, 5])));
+
+    var bufferedAmount = await dataChannel.bufferedAmount;
+    _sdp += '\n bufferedAmount: $bufferedAmount';
   }
 
   // Platform messages are asynchronous, so we initialize in an async method.
   void _makeCall() async {
+    _sdp = '';
     var configuration = <String, dynamic>{
       'iceServers': [
         {'url': 'stun:stun.l.google.com:19302'},
@@ -95,18 +116,26 @@ class _DataChannelSampleState extends State<DataChannelSample> {
       ],
     };
 
-    if (_peerConnection != null) return;
+    if (_localPeerConnection != null) return;
 
     try {
-      _peerConnection =
+      _localPeerConnection =
+          await createPeerConnection(configuration, loopbackConstraints);
+      _remotePeerConnection =
           await createPeerConnection(configuration, loopbackConstraints);
 
-      _peerConnection!.onSignalingState = _onSignalingState;
-      _peerConnection!.onIceGatheringState = _onIceGatheringState;
-      _peerConnection!.onIceConnectionState = _onIceConnectionState;
-      _peerConnection!.onIceCandidate = _onCandidate;
-      _peerConnection!.onRenegotiationNeeded = _onRenegotiationNeeded;
+      _localPeerConnection!.onSignalingState = _onSignalingState;
+      _localPeerConnection!.onIceGatheringState = _onIceGatheringState;
+      _localPeerConnection!.onIceConnectionState = _onIceConnectionState;
+      _localPeerConnection!.onIceCandidate = _onLocalCandidate;
+      _localPeerConnection!.onRenegotiationNeeded = _onRenegotiationNeeded;
 
+      _remotePeerConnection!.onSignalingState = _onSignalingState;
+      _remotePeerConnection!.onIceGatheringState = _onIceGatheringState;
+      _remotePeerConnection!.onIceConnectionState = _onIceConnectionState;
+      _remotePeerConnection!.onIceCandidate = _onRemoteCandidate;
+      _remotePeerConnection!.onRenegotiationNeeded = _onRenegotiationNeeded;
+      _remotePeerConnection!.onDataChannel = _onDataChannel;
       _dataChannelDict = RTCDataChannelInit();
       _dataChannelDict!.id = 1;
       _dataChannelDict!.ordered = true;
@@ -115,18 +144,25 @@ class _DataChannelSampleState extends State<DataChannelSample> {
       _dataChannelDict!.protocol = 'sctp';
       _dataChannelDict!.negotiated = false;
 
-      _dataChannel = await _peerConnection!
+      _dataChannel = await _localPeerConnection!
           .createDataChannel('dataChannel', _dataChannelDict!);
-      _peerConnection!.onDataChannel = _onDataChannel;
+      _dataChannel!.onMessage = (data) => {
+            setState(() {
+              _sdp += "\n";
+              _sdp += data.text;
+            })
+          };
 
-      var description = await _peerConnection!.createOffer(offerSdpConstraints);
-      print(description.sdp);
-      await _peerConnection!.setLocalDescription(description);
+      var localDescription =
+          await _localPeerConnection!.createOffer(offerSdpConstraints);
+      print(localDescription.sdp);
+      await _localPeerConnection!.setLocalDescription(localDescription);
 
-      _sdp = description.sdp ?? '';
-      //change for loopback.
-      //description.type = 'answer';
-      //_peerConnection.setRemoteDescription(description);
+      await _remotePeerConnection!.setRemoteDescription(localDescription);
+      var remoteDescription =
+          await _remotePeerConnection!.createAnswer(offerSdpConstraints);
+      await _remotePeerConnection!.setLocalDescription(remoteDescription);
+      await _localPeerConnection!.setRemoteDescription(remoteDescription);
     } catch (e) {
       print(e.toString());
     }
@@ -140,8 +176,8 @@ class _DataChannelSampleState extends State<DataChannelSample> {
   void _hangUp() async {
     try {
       await _dataChannel?.close();
-      await _peerConnection?.close();
-      _peerConnection = null;
+      await _localPeerConnection?.close();
+      _localPeerConnection = null;
     } catch (e) {
       print(e.toString());
     }

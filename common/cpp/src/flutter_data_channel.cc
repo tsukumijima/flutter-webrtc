@@ -121,7 +121,7 @@ void FlutterDataChannel::DataChannelClose(
   result->Success();
 }
 
-RTCDataChannel *FlutterDataChannel::DataChannelFormId(int id) {
+RTCDataChannel *FlutterDataChannel::DataChannelFromId(int id) {
   auto it = base_->data_channel_observers_.find(id);
 
   if (it != base_->data_channel_observers_.end()) {
@@ -167,6 +167,16 @@ void FlutterRTCDataChannelObserver::OnMessage(const char *buffer, int length,
     params[EncodableValue("type")] = EncodableValue(binary ? "binary" : "text");
     std::string str(buffer, length);
     params[EncodableValue("data")] = binary ? EncodableValue(std::vector<uint8_t>(str.begin(), str.end())) : EncodableValue(str);
+    event_sink_->Success(EncodableValue(params));
+  }
+}
+
+void FlutterRTCDataChannelObserver::OnBufferedAmountChange(uint64_t sent_data_size){
+  if(event_sink_ != nullptr){
+    EncodableMap params;
+    params[EncodableValue("event")] = EncodableValue("dataChannelStateChanged");
+    params[EncodableValue("id")] = EncodableValue(data_channel_->id());
+    params[EncodableValue("sent_data_size")] = EncodableValue(static_cast<int>(sent_data_size));
     event_sink_->Success(EncodableValue(params));
   }
 }

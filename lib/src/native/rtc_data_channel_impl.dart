@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ffi';
 
 import 'package:flutter/services.dart';
 
@@ -18,6 +19,7 @@ class RTCDataChannelNative extends RTCDataChannel {
       this._peerConnectionId, this._label, this._dataChannelId) {
     stateChangeStream = _stateChangeController.stream;
     messageStream = _messageController.stream;
+    bufferedAmountStream = _bufferedAmountController.stream;
     _eventSubscription = _eventChannelFor(_peerConnectionId, _dataChannelId)
         .receiveBroadcastStream()
         .listen(eventListener, onError: errorListener);
@@ -39,12 +41,17 @@ class RTCDataChannelNative extends RTCDataChannel {
   String? get label => _label;
 
   @override
-  int? get bufferedAmount => throw UnimplementedError();
+  Future<int?> get bufferedAmount =>
+      WebRTC.invokeMethod('dataChannelBufferedAmount', <String, dynamic>{
+        'peerConnectionId': _peerConnectionId,
+        'dataChannelId': _dataChannelId
+      });
 
   final _stateChangeController =
       StreamController<RTCDataChannelState>.broadcast(sync: true);
   final _messageController =
       StreamController<RTCDataChannelMessage>.broadcast(sync: true);
+  final _bufferedAmountController = StreamController<int>.broadcast(sync: true);
 
   /// RTCDataChannel event listener.
   void eventListener(dynamic event) {
@@ -58,8 +65,6 @@ class RTCDataChannelNative extends RTCDataChannel {
         _stateChangeController.add(_state!);
         break;
       case 'dataChannelReceiveMessage':
-        //int dataChannelId = map['id'];
-
         var type = _typeStringToMessageType[map['type']];
         dynamic data = map['data'];
         RTCDataChannelMessage message;
@@ -68,10 +73,13 @@ class RTCDataChannelNative extends RTCDataChannel {
         } else {
           message = RTCDataChannelMessage(data);
         }
-
         onMessage?.call(message);
 
         _messageController.add(message);
+        break;
+      case 'dataChannelBufferedAmountChanged':
+        dynamic data = map['sent_data_size'];
+        _bufferedAmountController.add(data);
         break;
     }
   }
