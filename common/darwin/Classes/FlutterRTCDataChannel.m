@@ -136,6 +136,15 @@
     [dataChannel sendData:buffer];
 }
 
+-(int)dataChannelBufferedAmount:(nonnull NSString *)peerConnectionId
+         dataChannelId:(nonnull NSNumber *)dataChannelId
+{
+    RTCPeerConnection *peerConnection = self.peerConnections[peerConnectionId];
+    RTCDataChannel *dataChannel = peerConnection.dataChannels[dataChannelId];
+
+    return (int)dataChannel.bufferedAmount;
+}
+
 - (NSString *)stringForDataChannelState:(RTCDataChannelState)state
 {
   switch (state) {
