@@ -348,6 +348,17 @@
                          data:data
                          type:type];
         result(nil);
+    }
+    else if ([@"dataChannelBufferedAmount" isEqualToString:call.method]){
+        NSDictionary* argsMap = call.arguments;
+        NSString* peerConnectionId = argsMap[@"peerConnectionId"];
+        NSNumber* dataChannelId = argsMap[@"dataChannelId"];
+        NSString* type = argsMap[@"type"];
+        id data = argsMap[@"data"];
+
+        int intBufferedAmount = [self dataChannelBufferedAmount:peerConnectionId
+                dataChannelId:dataChannelId];
+        result(intBufferedAmount);
     } else if ([@"dataChannelClose" isEqualToString:call.method]){
         NSDictionary* argsMap = call.arguments;
         NSString* peerConnectionId = argsMap[@"peerConnectionId"];

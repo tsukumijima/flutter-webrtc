@@ -26,4 +26,6 @@
                   data:(nonnull NSString *)data
                   type:(nonnull NSString *)type;
 
+-(int)dataChannelBufferedAmount:(nonnull NSString *)peerConnectionId
+         dataChannelId:(nonnull NSNumber *)dataChannelId
 @end
