@@ -329,6 +329,12 @@ public class MethodCallHandlerImpl implements MethodCallHandler, StateProvider {
         result.success(null);
         break;
       }
+      case "dataChannelBufferedAmount": {
+        String peerConnectionId = call.argument("peerConnectionId");
+        int dataChannelId = call.argument("dataChannelId");
+        dataChannelBufferedAmount(peerConnectionId, dataChannelId, result);
+        break;
+      }
       case "dataChannelClose": {
         String peerConnectionId = call.argument("peerConnectionId");
         int dataChannelId = call.argument("dataChannelId");
@@ -1559,6 +1565,17 @@ public class MethodCallHandlerImpl implements MethodCallHandler, StateProvider {
       Log.d(TAG, "dataChannelSend() peerConnection is null");
     } else {
       pco.dataChannelSend(dataChannelId, bytebuffer, isBinary);
+    }
+  }
+
+  public void dataChannelBufferedAmount(String peerConnectionId, int dataChannelId, Result result){
+    PeerConnectionObserver pco
+          = mPeerConnectionObservers.get(peerConnectionId);
+    
+    if (pco == null || pco.getPeerConnection() == null) {
+      Log.d(TAG, "dataChannelSend() peerConnection is null");
+    } else {
+      pco.dataChannelBufferedAmount(dataChannelId, result);
     }
   }
 
