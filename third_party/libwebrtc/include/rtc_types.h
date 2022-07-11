@@ -20,8 +20,8 @@ namespace libwebrtc {
 
 enum { kMaxIceServerSize = 8 };
 
-//template <typename T>
-//using vector = bsp::inlined_vector<T, 16, true>;
+// template <typename T>
+// using vector = bsp::inlined_vector<T, 16, true>;
 
 template <typename Key, typename T>
 using map = std::map<Key, T>;
@@ -32,8 +32,8 @@ enum class RTCMediaType { ANY, AUDIO, VIDEO, DATA };
 
 using string = portable::string;
 
-//template <typename Key, typename T>
-//using map = portable::map<Key, T>;
+// template <typename Key, typename T>
+// using map = portable::map<Key, T>;
 
 template <typename T>
 using vector = portable::vector<T>;
@@ -99,7 +99,20 @@ struct SdpParseError {
   string description;
 };
 
-enum DesktopType { kScreen, kWindow };
+enum SourceType {
+  kWindow,
+  kEntireScreen,
+};
+
+struct Source {
+ public:
+  string id;
+  string title;
+  SourceType type;
+};
+
+// typedef portable::vector<Source> SourceList;
+using SourceList = portable::vector<Source>;
 
 }  // namespace libwebrtc
 

@@ -7,10 +7,7 @@ import 'package:webrtc_interface/webrtc_interface.dart';
 
 import 'utils.dart';
 
-final _typeStringToMessageType = <String, MessageType>{
-  'text': MessageType.text,
-  'binary': MessageType.binary
-};
+final _typeStringToMessageType = <String, MessageType>{'text': MessageType.text, 'binary': MessageType.binary};
 
 /// A class that represents a WebRTC datachannel.
 /// Can send and receive text and binary messages.
@@ -52,16 +49,11 @@ class RTCDataChannelNative extends RTCDataChannel {
   String? get label => _label;
 
   @override
-  Future<int?> get bufferedAmount =>
-      WebRTC.invokeMethod('dataChannelBufferedAmount', <String, dynamic>{
-        'peerConnectionId': _peerConnectionId,
-        'dataChannelId': _dataChannelId
-      });
+  Future<int?> get bufferedAmount => WebRTC.invokeMethod('dataChannelBufferedAmount',
+      <String, dynamic>{'peerConnectionId': _peerConnectionId, 'dataChannelId': _flutterId});
 
-  final _stateChangeController =
-      StreamController<RTCDataChannelState>.broadcast(sync: true);
-  final _messageController =
-      StreamController<RTCDataChannelMessage>.broadcast(sync: true);
+  final _stateChangeController = StreamController<RTCDataChannelState>.broadcast(sync: true);
+  final _messageController = StreamController<RTCDataChannelMessage>.broadcast(sync: true);
   final _bufferedAmountController = StreamController<int>.broadcast(sync: true);
 
   /// RTCDataChannel event listener.
@@ -104,8 +96,7 @@ class RTCDataChannelNative extends RTCDataChannel {
   }
 
   EventChannel _eventChannelFor(String peerConnectionId, String flutterId) {
-    return EventChannel(
-        'FlutterWebRTC/dataChannelEvent$peerConnectionId$flutterId');
+    return EventChannel('FlutterWebRTC/dataChannelEvent$peerConnectionId$flutterId');
   }
 
   void errorListener(Object obj) {
@@ -129,9 +120,7 @@ class RTCDataChannelNative extends RTCDataChannel {
     await _stateChangeController.close();
     await _messageController.close();
     await _eventSubscription?.cancel();
-    await WebRTC.invokeMethod('dataChannelClose', <String, dynamic>{
-      'peerConnectionId': _peerConnectionId,
-      'dataChannelId': _flutterId
-    });
+    await WebRTC.invokeMethod(
+        'dataChannelClose', <String, dynamic>{'peerConnectionId': _peerConnectionId, 'dataChannelId': _flutterId});
   }
 }
