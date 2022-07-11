@@ -1,6 +1,6 @@
 name: flutter_webrtc
 description: Fork of flutter-webrtc -> Flutter WebRTC plugin for iOS/Android/Destkop/Web, based on GoogleWebRTC.
-version: 0.8.6
+version: 0.8.11
 homepage: https://github.com/pwinter1991/flutter-webrtc
 publish_to: none
 environment:

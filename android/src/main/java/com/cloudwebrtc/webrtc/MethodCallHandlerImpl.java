@@ -310,7 +310,7 @@ public class MethodCallHandlerImpl implements MethodCallHandler, StateProvider {
       }
       case "dataChannelSend": {
         String peerConnectionId = call.argument("peerConnectionId");
-        int dataChannelId = call.argument("dataChannelId");
+        String dataChannelId = call.argument("dataChannelId");
         String type = call.argument("type");
         Boolean isBinary = type.equals("binary");
         ByteBuffer byteBuffer;
@@ -337,7 +337,7 @@ public class MethodCallHandlerImpl implements MethodCallHandler, StateProvider {
       }
       case "dataChannelClose": {
         String peerConnectionId = call.argument("peerConnectionId");
-        int dataChannelId = call.argument("dataChannelId");
+        String dataChannelId = call.argument("dataChannelId");
         dataChannelClose(peerConnectionId, dataChannelId);
         result.success(null);
         break;
@@ -1555,7 +1555,7 @@ public class MethodCallHandlerImpl implements MethodCallHandler, StateProvider {
     }
   }
 
-  public void dataChannelSend(String peerConnectionId, int dataChannelId, ByteBuffer bytebuffer,
+  public void dataChannelSend(String peerConnectionId, String dataChannelId, ByteBuffer bytebuffer,
                               Boolean isBinary) {
     // Forward to PeerConnectionObserver which deals with DataChannels
     // because DataChannel is owned by PeerConnection.
@@ -1568,7 +1568,7 @@ public class MethodCallHandlerImpl implements MethodCallHandler, StateProvider {
     }
   }
 
-  public void dataChannelBufferedAmount(String peerConnectionId, int dataChannelId, Result result){
+public void dataChannelBufferedAmount(String peerConnectionId, int dataChannelId, Result result){
     PeerConnectionObserver pco
           = mPeerConnectionObservers.get(peerConnectionId);
     
@@ -1578,8 +1578,7 @@ public class MethodCallHandlerImpl implements MethodCallHandler, StateProvider {
       pco.dataChannelBufferedAmount(dataChannelId, result);
     }
   }
-
-  public void dataChannelClose(String peerConnectionId, int dataChannelId) {
+public void dataChannelClose(String peerConnectionId, String dataChannelId) {
     // Forward to PeerConnectionObserver which deals with DataChannels
     // because DataChannel is owned by PeerConnection.
     PeerConnectionObserver pco
