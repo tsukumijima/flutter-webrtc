@@ -354,7 +354,7 @@
         NSString* type = argsMap[@"type"];
         id data = argsMap[@"data"];
 
-        NSNumberWithInt intBufferedAmount = [self dataChannelBufferedAmount:peerConnectionId
+        int intBufferedAmount = [self dataChannelBufferedAmount:peerConnectionId
                 dataChannelId:dataChannelId];
         result([NSNumber numberWithInt:intBufferedAmount]);
     } else if ([@"dataChannelClose" isEqualToString:call.method]){
