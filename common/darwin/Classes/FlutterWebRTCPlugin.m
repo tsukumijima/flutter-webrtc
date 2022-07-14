@@ -356,7 +356,7 @@
 
         int intBufferedAmount = [self dataChannelBufferedAmount:peerConnectionId
                 dataChannelId:dataChannelId];
-        result(intBufferedAmount);
+        result([NSNumber numberWithInt:intBufferedAmount]);
     } else if ([@"dataChannelClose" isEqualToString:call.method]){
         NSDictionary* argsMap = call.arguments;
         NSString* peerConnectionId = argsMap[@"peerConnectionId"];
