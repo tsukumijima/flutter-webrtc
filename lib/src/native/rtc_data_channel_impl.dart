@@ -51,12 +51,12 @@ class RTCDataChannelNative extends RTCDataChannel {
   String? get label => _label;
 
   @override
-  int? get bufferedAmount => _bufferedAmount;
+  Future<int?> get bufferedAmount => WebRTC.invokeMethod('dataChannelBufferedAmount',
+      <String, dynamic>{'peerConnectionId': _peerConnectionId, 'dataChannelId': _flutterId});
 
-  final _stateChangeController =
-      StreamController<RTCDataChannelState>.broadcast(sync: true);
-  final _messageController =
-      StreamController<RTCDataChannelMessage>.broadcast(sync: true);
+  final _stateChangeController = StreamController<RTCDataChannelState>.broadcast(sync: true);
+  final _messageController = StreamController<RTCDataChannelMessage>.broadcast(sync: true);
+  final _bufferedAmountController = StreamController<int>.broadcast(sync: true);
 
   /// RTCDataChannel event listener.
   void eventListener(dynamic event) {

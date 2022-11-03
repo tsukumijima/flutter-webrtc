@@ -160,6 +160,16 @@ class PeerConnectionObserver implements PeerConnection.Observer, EventChannel.St
         }
     }
 
+    void dataChannelBufferedAmount(int dataChannelId, Result result){
+      DataChannel dataChannel = dataChannels.get(dataChannelId);
+        if (dataChannel != null) {
+            int bufferedAmount =  (int)dataChannel.bufferedAmount();
+            result.success(bufferedAmount);
+        } else {
+            Log.d(TAG, "dataChannelSend() dataChannel is null");
+        }
+    }
+
     RtpTransceiver getRtpTransceiverById(String id) {
        RtpTransceiver transceiver = transceivers.get(id);
        if(null == transceiver) {

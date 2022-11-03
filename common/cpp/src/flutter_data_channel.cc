@@ -167,4 +167,14 @@ void FlutterRTCDataChannelObserver::OnMessage(const char *buffer, int length,
     event_queue_.push_back(data);
   }
 }
+
+void FlutterRTCDataChannelObserver::OnBufferedAmountChange(uint64_t sent_data_size){
+  if(event_sink_ != nullptr){
+    EncodableMap params;
+    params[EncodableValue("event")] = EncodableValue("dataChannelStateChanged");
+    params[EncodableValue("id")] = EncodableValue(data_channel_->id());
+    params[EncodableValue("sent_data_size")] = EncodableValue(static_cast<int>(sent_data_size));
+    event_sink_->Success(EncodableValue(params));
+  }
+}
 }  // namespace flutter_webrtc_plugin
