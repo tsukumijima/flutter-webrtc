@@ -1,6 +1,6 @@
 name: flutter_webrtc
 description: Fork of flutter-webrtc -> Flutter WebRTC plugin for iOS/Android/Destkop/Web, based on GoogleWebRTC.
-version: 0.8.11
+version: 0.9.11
 homepage: https://github.com/hexagon-htc/flutter-webrtc
 publish_to: none
 environment:
@@ -19,11 +19,11 @@ dependencies:
     git:
       url: https://github.com/Hexagon-HTC/webrtc-interface.git
       ref: main
-  
 dev_dependencies:
   flutter_test:
     sdk: flutter
   import_sorter: ^4.6.0
+  lints: ^2.0.0
   pedantic: ^1.11.1
   test: any
 

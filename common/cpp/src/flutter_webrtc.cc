@@ -49,16 +49,12 @@ void FlutterWebRTC::HandleMethodCall(
     const EncodableMap constraints = findMap(params, "constraints");
 
     GetDisplayMedia(constraints, std::move(result));
-
-  }
-
-  else if (method_call.method_name().compare("getDesktopSources") == 0) {
+  } else if (method_call.method_name().compare("getDesktopSources") == 0) {
     // types: ["screen", "window"]
     if (!method_call.arguments()) {
       result->Error("Bad Arguments", "Bad arguments received");
       return;
     }
-
     const EncodableMap params =
         GetValue<EncodableMap>(*method_call.arguments());
 
@@ -67,12 +63,25 @@ void FlutterWebRTC::HandleMethodCall(
       result->Error("Bad Arguments", "Types is required");
       return;
     }
-
     GetDesktopSources(types, std::move(result));
-  }
+  } else if (method_call.method_name().compare("updateDesktopSources") ==
+             0) {
+    // types: ["screen", "window"]
+    if (!method_call.arguments()) {
+      result->Error("Bad Arguments", "Bad arguments received");
+      return;
+    }
+    const EncodableMap params =
+        GetValue<EncodableMap>(*method_call.arguments());
 
-  else if (method_call.method_name().compare("getDesktopSourceThumbnail") ==
-           0) {
+    const EncodableList types = findList(params, "types");
+    if (types == EncodableList()) {
+      result->Error("Bad Arguments", "Types is required");
+      return;
+    }
+    UpdateDesktopSources(types, std::move(result));
+  } else if (method_call.method_name().compare("getDesktopSourceThumbnail") ==
+             0) {
     if (!method_call.arguments()) {
       result->Error("Bad Arguments", "Bad arguments received");
       return;
@@ -85,64 +94,26 @@ void FlutterWebRTC::HandleMethodCall(
       result->Error("Bad Arguments", "Incorrect sourceId");
       return;
     }
-    int source_id = std::stoi(sourceId);
-
     const EncodableMap thumbnailSize = findMap(params, "thumbnailSize");
     if (thumbnailSize != EncodableMap()) {
-      // auto it = thumbnailSize.find(EncodableValue("width"));
-      // if (it != thumbnailSize.end()) {
-      //   const EncodableValue optional = it->second;
-      //   int width1 = GetValue<int>(optional);
-      //   std::cout << " width1: " << width1 << std::endl;
-      // } else {
-      //   std::cout << " width not found !!! " << std::endl;
-      // }
-
       int width = 0;
-      // width = findInt(thumbnailSize, "width");
-      // std::cout << " width: " << width << std::endl;
-
       int height = 0;
-      // height = findInt(thumbnailSize, "height");
-      // std::cout << " height: " << height << std::endl;
-
-      GetDesktopSourceThumbnail(source_id, width, height, std::move(result));
+      GetDesktopSourceThumbnail(sourceId, width, height, std::move(result));
     } else {
       result->Error("Bad Arguments", "Bad arguments received");
     }
-  }
-
-  else if (method_call.method_name().compare("enumerateScreens") == 0) {
-    EnumerateScreens(std::move(result));
-  }
-
-  else if (method_call.method_name().compare("enumerateWindows") == 0) {
-    EnumerateWindows(std::move(result));
-  }
-
-  else if (method_call.method_name().compare("getWindowCapture") == 0) {
-    if (!method_call.arguments()) {
-      result->Error("Bad Arguments", "Null constraints arguments received");
-      return;
-    }
-
+  } else if (method_call.method_name().compare("getSources") == 0) {
+    GetSources(std::move(result));
+  } else if (method_call.method_name().compare("selectAudioInput") == 0) {
     const EncodableMap params =
         GetValue<EncodableMap>(*method_call.arguments());
-    const EncodableMap constraints = findMap(params, "constraints");
-
-    std::string windowId = findString(params, "windowId");
-    if (windowId.empty()) {
-      result->Error("Bad Arguments", "Incorrect windowId");
-      return;
-    }
-
-    int window_id = std::stoi(windowId);
-    CreateCapture(libwebrtc::SourceType::kWindow, window_id, constraints,
-                  std::move(result));
-  }
-
-  else if (method_call.method_name().compare("getSources") == 0) {
-    GetSources(std::move(result));
+    const std::string deviceId = findString(params, "deviceId");
+    SelectAudioInput(deviceId, std::move(result));
+  }  else if (method_call.method_name().compare("selectAudioOutput") == 0) {
+    const EncodableMap params =
+        GetValue<EncodableMap>(*method_call.arguments());
+    const std::string deviceId = findString(params, "deviceId");
+    SelectAudioOutput(deviceId, std::move(result));
   } else if (method_call.method_name().compare("mediaStreamGetTracks") == 0) {
     if (!method_call.arguments()) {
       result->Error("Bad Arguments", "Null constraints arguments received");
@@ -299,6 +270,21 @@ void FlutterWebRTC::HandleMethodCall(
 
     AddIceCandidate(rtc_candidate.get(), pc, std::move(result));
   } else if (method_call.method_name().compare("getStats") == 0) {
+    if (!method_call.arguments()) {
+      result->Error("Bad Arguments", "Null constraints arguments received");
+      return;
+    }
+    const EncodableMap params =
+        GetValue<EncodableMap>(*method_call.arguments());
+    const std::string peerConnectionId = findString(params, "peerConnectionId");
+     const std::string track_id = findString(params, "trackId");
+    RTCPeerConnection* pc = PeerConnectionForId(peerConnectionId);
+    if (pc == nullptr) {
+      result->Error("getStatsFailed",
+                    "getStats() peerConnection is null");
+      return;
+    }
+    GetStats(track_id, pc, std::move(result));
   } else if (method_call.method_name().compare("createDataChannel") == 0) {
     if (!method_call.arguments()) {
       result->Error("Bad Arguments", "Null constraints arguments received");
@@ -497,8 +483,9 @@ void FlutterWebRTC::HandleMethodCall(
         GetValue<EncodableMap>(*method_call.arguments());
     const std::string stream_id = findString(params, "streamId");
     int64_t texture_id = findLongInt(params, "textureId");
+    const std::string peerConnectionId = findString(params, "ownerTag");
 
-    SetMediaStream(texture_id, stream_id);
+    SetMediaStream(texture_id, stream_id, peerConnectionId);
     result->Success();
   } else if (method_call.method_name().compare(
                  "mediaStreamTrackSwitchCamera") == 0) {
@@ -773,10 +760,6 @@ void FlutterWebRTC::HandleMethodCall(
 
     const std::string trackId = findString(params, "trackId");
     RTCMediaTrack* track = MediaTrackForId(trackId);
-    if (nullptr == track) {
-      result->Error("rtpSenderSetTrack", "rtpSenderSetTrack() track is null");
-      return;
-    }
 
     const std::string rtpSenderId = findString(params, "rtpSenderId");
     if (0 < rtpSenderId.size()) {
@@ -805,11 +788,6 @@ void FlutterWebRTC::HandleMethodCall(
 
     const std::string trackId = findString(params, "trackId");
     RTCMediaTrack* track = MediaTrackForId(trackId);
-    if (nullptr == track) {
-      result->Error("rtpSenderReplaceTrack",
-                    "rtpSenderReplaceTrack() track is null");
-      return;
-    }
 
     const std::string rtpSenderId = findString(params, "rtpSenderId");
     if (0 < rtpSenderId.size()) {
@@ -925,11 +903,11 @@ void FlutterWebRTC::HandleMethodCall(
       return;
     }
 
-    const std::string rtpTransceiverId = findString(params, "rtpTransceiverId");
+    const std::string rtpTransceiverId = findString(params, "transceiverId");
     if (0 < rtpTransceiverId.size()) {
       if (pc == nullptr) {
         result->Error("rtpTransceiverGetCurrentDirection",
-                      "rtpTransceiverGetCurrentDirection() rtpTransceiverId is "
+                      "rtpTransceiverGetCurrentDirection() transceiverId is "
                       "null or empty");
         return;
       }
@@ -999,6 +977,68 @@ void FlutterWebRTC::HandleMethodCall(
     }
     CaptureFrame((RTCVideoTrack*)track, path, std::move(result));
 
+  } else if (method_call.method_name().compare("createLocalMediaStream") == 0) {
+    CreateLocalMediaStream(std::move(result));
+  } else if (method_call.method_name().compare("canInsertDtmf") == 0) {
+    if (!method_call.arguments()) {
+      result->Error("Bad Arguments", "Null constraints arguments received");
+      return;
+    }
+    const EncodableMap params =
+        GetValue<EncodableMap>(*method_call.arguments());
+    const std::string peerConnectionId = findString(params, "peerConnectionId");
+    const std::string rtpSenderId = findString(params, "rtpSenderId");
+
+    RTCPeerConnection* pc = PeerConnectionForId(peerConnectionId);
+    if (pc == nullptr) {
+      result->Error("canInsertDtmf",
+                    "canInsertDtmf() peerConnection is null");
+      return;
+    }
+
+    auto rtpSender = GetRtpSenderById(pc, rtpSenderId);
+
+    if (rtpSender == nullptr) {
+      result->Error("sendDtmf",
+                    "sendDtmf() rtpSender is null");
+      return;
+    }
+    auto dtmfSender = rtpSender->dtmf_sender();
+    bool canInsertDtmf = dtmfSender->CanInsertDtmf();
+
+    result->Success(EncodableValue(canInsertDtmf));
+  } else if (method_call.method_name().compare("sendDtmf") == 0) {
+    if (!method_call.arguments()) {
+      result->Error("Bad Arguments", "Null constraints arguments received");
+      return;
+    }
+    const EncodableMap params =
+        GetValue<EncodableMap>(*method_call.arguments());
+    const std::string peerConnectionId = findString(params, "peerConnectionId");
+    const std::string rtpSenderId = findString(params, "rtpSenderId");
+    const std::string tone = findString(params, "tone");
+    int duration = findInt(params, "duration");
+    int gap = findInt(params, "gap");
+  
+    RTCPeerConnection* pc = PeerConnectionForId(peerConnectionId);
+    if (pc == nullptr) {
+      result->Error("sendDtmf",
+                    "sendDtmf() peerConnection is null");
+      return;
+    }
+
+    auto rtpSender = GetRtpSenderById(pc, rtpSenderId);
+
+    if (rtpSender == nullptr) {
+      result->Error("sendDtmf",
+                    "sendDtmf() rtpSender is null");
+      return;
+    }
+
+    auto dtmfSender = rtpSender->dtmf_sender();
+    dtmfSender->InsertDtmf(tone, duration, gap);
+
+    result->Success();
   } else {
     result->NotImplemented();
   }

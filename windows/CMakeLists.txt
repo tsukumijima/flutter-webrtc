@@ -8,6 +8,7 @@ set(PLUGIN_NAME "flutter_webrtc_plugin")
 
 add_definitions(-DLIB_WEBRTC_API_DLL -DRTC_DESKTOP_DEVICE)
 
+
 add_library(${PLUGIN_NAME} SHARED
   "../common/cpp/flutter_webrtc_plugin.cc"
   "../common/cpp/src/flutter_data_channel.cc"

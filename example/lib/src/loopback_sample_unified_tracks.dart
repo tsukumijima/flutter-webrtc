@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:core';
 
 import 'package:flutter/material.dart';
@@ -21,10 +22,12 @@ class _MyAppState extends State<LoopBackSampleUnifiedTracks> {
   bool _inCalling = false;
   bool _micOn = false;
   bool _cameraOn = false;
-
+  bool _speakerOn = false;
+  List<MediaDeviceInfo>? _mediaDevicesList;
+  Timer? _timer;
   final _configuration = <String, dynamic>{
     'iceServers': [
-      {'url': 'stun:stun.l.google.com:19302'},
+      //{'url': 'stun:stun.l.google.com:19302'},
     ],
     'sdpSemantics': 'unified-plan'
   };
@@ -40,14 +43,37 @@ class _MyAppState extends State<LoopBackSampleUnifiedTracks> {
   void initState() {
     print('Init State');
     super.initState();
-    initRenderers();
-    initLocalConnection();
+
+    _refreshMediaDevices();
+    navigator.mediaDevices.ondevicechange = (event) async {
+      print('++++++ ondevicechange ++++++');
+      var devices = await navigator.mediaDevices.enumerateDevices();
+      setState(() {
+        _mediaDevicesList = devices;
+      });
+    };
   }
 
   @override
   void deactivate() {
     super.deactivate();
+    navigator.mediaDevices.ondevicechange = null;
     _cleanUp();
+  }
+
+  Future<void> _refreshMediaDevices() async {
+    var devices = await navigator.mediaDevices.enumerateDevices();
+    setState(() {
+      _mediaDevicesList = devices;
+    });
+  }
+
+  void _selectAudioOutput(String deviceId) async {
+    await _localRenderer.audioOutput(deviceId);
+  }
+
+  void _selectAudioInput(String deviceId) async {
+    await Helper.selectAudioInput(deviceId);
   }
 
   void _cleanUp() async {
@@ -56,8 +82,10 @@ class _MyAppState extends State<LoopBackSampleUnifiedTracks> {
       await _videoSender?.dispose();
       await _audioSender?.dispose();
       await _remotePeerConnection?.close();
+      await _remotePeerConnection?.dispose();
       _remotePeerConnection = null;
       await _localPeerConnection?.close();
+      await _localPeerConnection?.dispose();
       _localPeerConnection = null;
       _localRenderer.srcObject = null;
       _remoteRenderer.srcObject = null;
@@ -202,6 +230,9 @@ class _MyAppState extends State<LoopBackSampleUnifiedTracks> {
 
   // Platform messages are asynchronous, so we initialize in an async method.
   void _makeCall() async {
+    initRenderers();
+    initLocalConnection();
+
     if (_remotePeerConnection != null) return;
 
     try {
@@ -221,8 +252,8 @@ class _MyAppState extends State<LoopBackSampleUnifiedTracks> {
     } catch (e) {
       print(e.toString());
     }
-    if (!mounted) return;
 
+    if (!mounted) return;
     setState(() {
       _inCalling = true;
     });
@@ -254,6 +285,7 @@ class _MyAppState extends State<LoopBackSampleUnifiedTracks> {
   void _hangUp() async {
     try {
       await _remotePeerConnection?.close();
+      await _remotePeerConnection?.dispose();
       _remotePeerConnection = null;
       _remoteRenderer.srcObject = null;
     } catch (e) {
@@ -270,8 +302,7 @@ class _MyAppState extends State<LoopBackSampleUnifiedTracks> {
       'video': video
           ? {
               'mandatory': {
-                'minWidth':
-                    '640', // Provide your own width, height and frame rate here
+                'minWidth': '640',
                 'minHeight': '480',
                 'minFrameRate': '30',
               },
@@ -280,6 +311,11 @@ class _MyAppState extends State<LoopBackSampleUnifiedTracks> {
             }
           : false,
     };
+  }
+
+  void _sendDtmf() async {
+    var dtmfSender = _audioSender?.dtmfSender;
+    await dtmfSender?.insertDTMF('123#');
   }
 
   void _startVideo() async {
@@ -302,6 +338,11 @@ class _MyAppState extends State<LoopBackSampleUnifiedTracks> {
       _localRenderer.srcObject = _localStream;
       _cameraOn = true;
     });
+
+    _timer?.cancel();
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) async {
+      handleStatsReport(timer);
+    });
   }
 
   void _stopVideo() async {
@@ -313,11 +354,14 @@ class _MyAppState extends State<LoopBackSampleUnifiedTracks> {
       _remoteRenderer.srcObject = null;
       _cameraOn = false;
     });
+    _timer?.cancel();
+    _timer = null;
   }
 
   void _startAudio() async {
     var newStream = await navigator.mediaDevices
         .getUserMedia(_getMediaConstraints(audio: true, video: false));
+
     if (_localStream != null) {
       await _removeExistingAudioTrack();
       for (var newTrack in newStream.getAudioTracks()) {
@@ -341,6 +385,44 @@ class _MyAppState extends State<LoopBackSampleUnifiedTracks> {
     setState(() {
       _micOn = false;
     });
+  }
+
+  void _switchSpeaker() async {
+    setState(() {
+      _speakerOn = !_speakerOn;
+      Helper.setSpeakerphoneOn(_speakerOn);
+    });
+  }
+
+  void handleStatsReport(Timer timer) async {
+    if (_remotePeerConnection != null && _remoteRenderer.srcObject != null) {
+      var reports = await _remotePeerConnection
+          ?.getStats(_remoteRenderer.srcObject!.getVideoTracks().first);
+      reports?.forEach((report) {
+        print('report => { ');
+        print('    id: ' + report.id + ',');
+        print('    type: ' + report.type + ',');
+        print('    timestamp: ${report.timestamp},');
+        print('    values => {');
+        report.values.forEach((key, value) {
+          print('        ' + key + ' : ' + value.toString() + ', ');
+        });
+        print('    }');
+        print('}');
+      });
+
+      /*
+      var senders = await _peerConnection.getSenders();
+      var canInsertDTMF = await senders[0].dtmfSender.canInsertDtmf();
+      print(canInsertDTMF);
+      await senders[0].dtmfSender.insertDTMF('1');
+      var receivers = await _peerConnection.getReceivers();
+      print(receivers[0].track.id);
+      var transceivers = await _peerConnection.getTransceivers();
+      print(transceivers[0].sender.parameters);
+      print(transceivers[0].receiver.parameters);
+      */
+    }
   }
 
   Future<void> _removeExistingVideoTrack({bool fromConnection = false}) async {
@@ -437,6 +519,46 @@ class _MyAppState extends State<LoopBackSampleUnifiedTracks> {
     return Scaffold(
       appBar: AppBar(
         title: Text('LoopBack Unified Tracks example'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.keyboard),
+            onPressed: _sendDtmf,
+          ),
+          PopupMenuButton<String>(
+            onSelected: _selectAudioInput,
+            icon: Icon(Icons.settings_voice),
+            itemBuilder: (BuildContext context) {
+              if (_mediaDevicesList != null) {
+                return _mediaDevicesList!
+                    .where((device) => device.kind == 'audioinput')
+                    .map((device) {
+                  return PopupMenuItem<String>(
+                    value: device.deviceId,
+                    child: Text(device.label),
+                  );
+                }).toList();
+              }
+              return [];
+            },
+          ),
+          PopupMenuButton<String>(
+            onSelected: _selectAudioOutput,
+            icon: Icon(Icons.volume_down_alt),
+            itemBuilder: (BuildContext context) {
+              if (_mediaDevicesList != null) {
+                return _mediaDevicesList!
+                    .where((device) => device.kind == 'audiooutput')
+                    .map((device) {
+                  return PopupMenuItem<String>(
+                    value: device.deviceId,
+                    child: Text(device.label),
+                  );
+                }).toList();
+              }
+              return [];
+            },
+          ),
+        ],
       ),
       body: OrientationBuilder(
         builder: (context, orientation) {
@@ -463,6 +585,15 @@ class _MyAppState extends State<LoopBackSampleUnifiedTracks> {
                         tooltip: _micOn ? 'Stop mic' : 'Start mic',
                         onPressed: _micOn ? _stopAudio : _startAudio,
                         child: Icon(_micOn ? Icons.mic : Icons.mic_off)),
+                    FloatingActionButton(
+                        heroTag: null,
+                        backgroundColor:
+                            _speakerOn ? null : Theme.of(context).disabledColor,
+                        tooltip: _speakerOn ? 'Stop speaker' : 'Start speaker',
+                        onPressed: _switchSpeaker,
+                        child: Icon(_speakerOn
+                            ? Icons.speaker_phone
+                            : Icons.phone_in_talk)),
                     FloatingActionButton(
                       heroTag: null,
                       backgroundColor:

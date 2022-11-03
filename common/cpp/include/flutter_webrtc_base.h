@@ -23,6 +23,7 @@
 #include "rtc_mediaconstraints.h"
 #include "rtc_peerconnection.h"
 #include "rtc_peerconnection_factory.h"
+#include "rtc_dtmf_sender.h"
 #include "rtc_video_device.h"
 #include "uuidxx.h"
 
@@ -84,6 +85,13 @@ inline int findInt(const EncodableMap& map, const std::string& key) {
   return -1;
 }
 
+inline double findDouble(const EncodableMap& map, const std::string& key) {
+  auto it = map.find(EncodableValue(key));
+  if (it != map.end() && TypeIs<double>(it->second))
+    return GetValue<double>(it->second);
+  return 0.0;
+}
+
 inline int64_t findLongInt(const EncodableMap& map, const std::string& key) {
   for (auto it : map) {
     if (key == GetValue<std::string>(it.first)) {
@@ -139,7 +147,8 @@ class FlutterWebRTCBase {
 
   void RemovePeerConnectionObserversForId(const std::string& id);
 
-  scoped_refptr<RTCMediaStream> MediaStreamForId(const std::string& id);
+  scoped_refptr<RTCMediaStream> MediaStreamForId(const std::string& id,
+                                                 std::string peerConnectionId = std::string());
 
   void RemoveStreamForId(const std::string& id);
 
@@ -155,6 +164,8 @@ class FlutterWebRTCBase {
   scoped_refptr<RTCMediaTrack> MediaTracksForId(const std::string& id);
 
   void RemoveTracksForId(const std::string& id);
+
+  EventSink<EncodableValue> *event_sink();
 
  private:
   void ParseConstraints(const EncodableMap& src,
@@ -187,6 +198,8 @@ class FlutterWebRTCBase {
  protected:
   BinaryMessenger* messenger_;
   TextureRegistrar* textures_;
+  std::unique_ptr<EventChannel<EncodableValue>> event_channel_;
+  std::unique_ptr<EventSink<EncodableValue>> event_sink_;
 };
 
 }  // namespace flutter_webrtc_plugin

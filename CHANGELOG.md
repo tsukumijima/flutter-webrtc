@@ -1,6 +1,77 @@
 # Changelog
 
 --------------------------------------------
+[0.9.11] - 2022-10-16
+
+* [iOS] fix audio route/setSpeakerphoneOn issues.
+* [Windows] fix: Have same remote streams id then found wrong MediaStream.
+* [Dart] feat: RTCVideoRenderer supports specific trackId when setting MediaStream.
+
+[0.9.9+hotfix.1] - 2022-10-12
+
+* [Darwin] Fix getStats for darwin when trackId is NSNull.
+
+[0.9.9] - 2022-10-12
+
+* [Darwin/Android/Windows] Support getStats for RtpSender/RtpReceiver (Migrate from Legacy to Standard Stats for getStats).
+* [Android] Dispose streams and connections.
+* [Android] Support rtp transceiver direction type 4.
+* [Web] Update dart_webrtc dependendency.
+
+[0.9.8] - 2022-09-30
+
+* [Android] fix: Make sure local stream/track dispose correctly.
+* [Android] Remove bluetooth permission on peerConnectionInit.
+* [iOS] Fix system sound interruption on iOS (#1099).
+* [Android] Fix: call mode on app start (#1097).
+* [Dart] Avoid renderer initialization multiple times (#1067).
+
+[0.9.7] - 2022-09-13
+
+* [Windows] Support sendDtmf.
+* [Windows] Fixed getStats.
+
+[0.9.6] - 2022-09-06
+
+* [Dart] The dc created by didOpenDataChannel needs to set state to open.
+* [Dart] Added callback onFirstFrameRendered.
+
+[0.9.5] - 2022-08-30
+
+* [Android] fix: Fix crash when using multiple renderers.
+* [Android] fix bug with track dispose cannot close video
+* [Andorid/iOS/macOS/Windows] Fix bug of missing events in data-channel.
+
+[0.9.4] - 2022-08-22
+
+* [Andorid/iOS/macOS/Windows] New audio input/output selection API, ondevicechange event is used to monitor audio device changes.
+
+[0.9.3] - 2022-08-15
+
+* [Windows/macOS] Fix UI freeze when getting thumbnails.
+
+[0.9.2] - 2022-08-09
+
+* [Android] update libwebrtc to com.github.webrtc-sdk:android:104.5112.01.
+* [iOS/macOS] update WebRTC-SDK to 104.5112.02.
+* [Windows] update libwebrtc.dll to 104.5112.02.
+
+[0.9.1] - 2022-08-01
+
+* [iOS] fix : iOS app could not change camera resolutions cause by wrong datatype in the video Contraints.
+* [Darwin] bump version for .podspec.
+
+[0.9.0] - 2022-07-27
+
+* [macOS] Added screen-sharing support for macOS
+* [Windows] Added screen-sharing support for Windows
+* [iOS/macOS] fix: Fix compile warning for Darwin
+* [Darwin/Android/Windows] fix: Fix typo peerConnectoinEvent -> peerConnectionEvent for EventChannel name (#1019)
+
+[0.8.12] - 2022-07-15
+
+* [Darwin]: fix: camera release.
+
 [0.8.11] - 2022-07-11
 
 * [Windows] Fix variant exception of findLongInt. (#990)
@@ -50,7 +121,6 @@
 
 * [Android] Fix simulcast factory not sending back EncoderInfo (#891)
 * [Android] fix: correct misspell in method screenRequestPermissions (#876)
-
 
 [0.8.3] - 2022-03-01
 

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 enum SourceType {
@@ -22,6 +23,8 @@ class ThumbnailSize {
   }
   int width;
   int height;
+
+  Map<String, int> toMap() => {'width': width, 'height': height};
 }
 
 abstract class DesktopCapturerSource {
@@ -33,7 +36,7 @@ abstract class DesktopCapturerSource {
   /// while the name of a window source will match the window title.
   String get name;
 
-  ///A thumbnail image of the source. ARGB
+  ///A thumbnail image of the source. jpeg encoded.
   Uint8List? get thumbnail;
 
   /// specified in the options passed to desktopCapturer.getSources.
@@ -42,9 +45,27 @@ abstract class DesktopCapturerSource {
 
   /// The type of the source.
   SourceType get type;
+
+  StreamController<String> get onNameChanged => throw UnimplementedError();
+
+  StreamController<Uint8List> get onThumbnailChanged =>
+      throw UnimplementedError();
 }
 
 abstract class DesktopCapturer {
+  StreamController<DesktopCapturerSource> get onAdded =>
+      throw UnimplementedError();
+  StreamController<DesktopCapturerSource> get onRemoved =>
+      throw UnimplementedError();
+  StreamController<DesktopCapturerSource> get onNameChanged =>
+      throw UnimplementedError();
+  StreamController<DesktopCapturerSource> get onThumbnailChanged =>
+      throw UnimplementedError();
+
+  ///Get the screen source of the specified types
   Future<List<DesktopCapturerSource>> getSources(
       {required List<SourceType> types, ThumbnailSize? thumbnailSize});
+
+  /// Updates the list of screen sources of the specified types
+  Future<bool> updateSources({required List<SourceType> types});
 }
