@@ -53,7 +53,6 @@ class RTCDataChannelNative extends RTCDataChannel {
 
   final _stateChangeController = StreamController<RTCDataChannelState>.broadcast(sync: true);
   final _messageController = StreamController<RTCDataChannelMessage>.broadcast(sync: true);
-  final _bufferedAmountController = StreamController<int>.broadcast(sync: true);
 
   /// RTCDataChannel event listener.
   void eventListener(dynamic event) {
