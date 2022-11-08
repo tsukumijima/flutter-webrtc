@@ -12,8 +12,7 @@ final _typeStringToMessageType = <String, MessageType>{'text': MessageType.text,
 /// A class that represents a WebRTC datachannel.
 /// Can send and receive text and binary messages.
 class RTCDataChannelNative extends RTCDataChannel {
-  RTCDataChannelNative(
-      this._peerConnectionId, this._label, this._dataChannelId, this._flutterId,
+  RTCDataChannelNative(this._peerConnectionId, this._label, this._dataChannelId, this._flutterId,
       {RTCDataChannelState? state}) {
     stateChangeStream = _stateChangeController.stream;
     messageStream = _messageController.stream;
@@ -62,10 +61,11 @@ class RTCDataChannelNative extends RTCDataChannel {
     switch (map['event']) {
       case 'dataChannelStateChanged':
         _dataChannelId = map['id'];
-        _state = rtcDataChannelStateForString(map['state']);
-        onDataChannelState?.call(_state!);
-
-        _stateChangeController.add(_state!);
+        if (map.containsKey('state')) {
+          _state = rtcDataChannelStateForString(map['state']);
+          onDataChannelState?.call(_state!);
+          _stateChangeController.add(_state!);
+        }
         break;
       case 'dataChannelReceiveMessage':
         _dataChannelId = map['id'];
