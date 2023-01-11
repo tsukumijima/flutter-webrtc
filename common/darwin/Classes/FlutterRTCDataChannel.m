@@ -134,8 +134,7 @@
 }
 
 - (int)dataChannelBufferedAmount:(nonnull NSString *)peerConnectionId
-                   dataChannelId:(nonnull NSNumber *)dataChannelId
-{
+                   dataChannelId:(nonnull NSNumber *)dataChannelId {
   RTCPeerConnection *peerConnection = self.peerConnections[peerConnectionId];
   RTCDataChannel *dataChannel = peerConnection.dataChannels[dataChannelId];
 
@@ -143,7 +142,6 @@
 }
 
 - (NSString*)stringForDataChannelState:(RTCDataChannelState)state {
-{
   switch (state) {
     case RTCDataChannelStateConnecting:
       return @"connecting";
