@@ -148,8 +148,8 @@ void FlutterRTCDataChannelObserver::OnMessage(const char* buffer,
   event_channel_->Success(data);
 }
 
-void FlutterRTCDataChannelObserver::OnBufferedAmountChange(uint64_t sent_data_size){
-  if(event_sink_ != nullptr){
+void FlutterRTCDataChannelObserver::OnBufferedAmountChange(uint64_t sent_data_size) {
+  if (event_sink_ != nullptr) {
     EncodableMap params;
     params[EncodableValue("event")] = EncodableValue("dataChannelStateChanged");
     params[EncodableValue("id")] = EncodableValue(data_channel_->id());
